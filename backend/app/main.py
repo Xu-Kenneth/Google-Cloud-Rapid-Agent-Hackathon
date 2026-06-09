@@ -19,6 +19,7 @@ from starlette.concurrency import run_in_threadpool
 from app import __version__
 from app.agents import DebateOrchestrator
 from app.config import get_settings
+from app.evals import gemini_eval_fn
 from app.observability import setup_tracing
 from app.tools.market_data import EvidencePack
 from app.tools.market_data import fetch_evidence as _fetch_evidence
@@ -72,7 +73,8 @@ def root() -> dict[str, str]:
 # --------------------------------------------------------------------------- #
 def get_orchestrator() -> DebateOrchestrator:
     """Dependency: the debate orchestrator (overridable in tests)."""
-    return DebateOrchestrator(settings=settings)
+    evaluator = gemini_eval_fn(settings) if settings.gemini_configured else None
+    return DebateOrchestrator(settings=settings, evaluator=evaluator)
 
 
 def get_evidence_fetcher() -> Callable[[str], EvidencePack]:

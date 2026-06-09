@@ -9,7 +9,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import AsyncIterator, Awaitable, Callable
+from typing import TYPE_CHECKING, AsyncIterator, Awaitable, Callable
+
+if TYPE_CHECKING:
+    from app.evals.debate_evals import EvalFn
 
 from app.agents.base import AgentSpec
 from app.agents.bear import BEAR
@@ -28,9 +31,37 @@ RunFn = Callable[[AgentSpec, str], Awaitable[str]]
 class DebateOrchestrator:
     """Run a single-pass Bull -> Bear -> Judge debate over an evidence pack."""
 
-    def __init__(self, run_fn: RunFn | None = None, settings: Settings | None = None):
+    def __init__(
+        self,
+        run_fn: RunFn | None = None,
+        settings: Settings | None = None,
+        evaluator: "EvalFn | None" = None,
+    ):
         self._run_fn = run_fn
         self._settings = settings or get_settings()
+        self._evaluator = evaluator
+
+    async def _evaluate(
+        self,
+        evidence: EvidencePack,
+        bull: Argument | None,
+        bear: Argument | None,
+        verdict: Verdict | None,
+        notes: list[str],
+    ) -> dict[str, dict] | None:
+        """Run evals if an evaluator is configured (best-effort)."""
+        if self._evaluator is None:
+            return None
+        try:
+            from app.evals import evaluate_debate, record_evals_as_spans
+
+            evals = await evaluate_debate(evidence, bull, bear, verdict, self._evaluator)
+            record_evals_as_spans(evals)
+            return {k: v.model_dump() for k, v in evals.items()}
+        except Exception as exc:  # noqa: BLE001 - evals never break the debate
+            logger.warning("evaluation failed: %s", exc)
+            notes.append(f"evals failed: {exc}")
+            return None
 
     async def _run(self, spec: AgentSpec, prompt: str) -> str:
         if self._run_fn is not None:
@@ -79,6 +110,8 @@ class DebateOrchestrator:
         if verdict_err:
             notes.append(verdict_err)
 
+        evals = await self._evaluate(evidence, bull, bear, verdict, notes)
+
         return DebateResult(
             ticker=evidence.ticker,
             company_name=evidence.company_name,
@@ -87,6 +120,7 @@ class DebateOrchestrator:
             bull=bull,
             bear=bear,
             verdict=verdict,
+            evals=evals,
             notes=notes,
         )
 
@@ -142,6 +176,10 @@ class DebateOrchestrator:
             "error": verdict_err,
         }
 
+        evals = await self._evaluate(evidence, bull, bear, verdict, notes)
+        if evals is not None:
+            yield {"type": "evals", "evals": evals}
+
         result = DebateResult(
             ticker=evidence.ticker,
             company_name=evidence.company_name,
@@ -150,6 +188,7 @@ class DebateOrchestrator:
             bull=bull,
             bear=bear,
             verdict=verdict,
+            evals=evals,
             notes=notes,
         )
         yield {"type": "complete", "result": result.model_dump()}

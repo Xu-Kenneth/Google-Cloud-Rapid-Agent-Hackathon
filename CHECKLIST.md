@@ -14,7 +14,7 @@ Implementation tracker for the [design spec](docs/superpowers/specs/2026-06-09-b
 - [x] **6. Debate endpoint (streaming)** — `/debate` SSE route wiring evidence → Bull → Bear → Judge and streaming results to the client.
 
 ## Arize core
-- [ ] **7. Evaluations** — `evals/debate_evals.py`: groundedness eval on Bull/Bear, reasoning-quality eval on the Judge; write scores back as Phoenix span annotations, with a test on canned traces.
+- [x] **7. Evaluations** — `evals/debate_evals.py`: groundedness eval on Bull/Bear, reasoning-quality eval on the Judge; write scores back as Phoenix span annotations, with a test on canned traces.
 - [ ] **8. Phoenix MCP integration** — `mcp/phoenix_client.py` + `/history` endpoint reading past-debate performance via the Phoenix MCP server.
 
 ## Product surface

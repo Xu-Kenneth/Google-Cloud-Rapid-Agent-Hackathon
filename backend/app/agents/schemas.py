@@ -63,4 +63,5 @@ class DebateResult(BaseModel):
     bull: Argument | None = None
     bear: Argument | None = None
     verdict: Verdict | None = None
+    evals: dict[str, dict] | None = None
     notes: list[str] = Field(default_factory=list)
