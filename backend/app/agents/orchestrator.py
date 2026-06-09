@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Awaitable, Callable
+from typing import AsyncIterator, Awaitable, Callable
 
 from app.agents.base import AgentSpec
 from app.agents.bear import BEAR
@@ -89,3 +89,67 @@ class DebateOrchestrator:
             verdict=verdict,
             notes=notes,
         )
+
+    async def stream_debate(
+        self, evidence: EvidencePack
+    ) -> AsyncIterator[dict[str, object]]:
+        """Yield debate events as they happen, for server-sent streaming.
+
+        Event ``type`` values: ``evidence`` -> ``argument`` (bull) ->
+        ``argument`` (bear) -> ``verdict`` -> ``complete``.
+        """
+        notes = list(evidence.notes)
+
+        yield {
+            "type": "evidence",
+            "ticker": evidence.ticker,
+            "company_name": evidence.company_name,
+            "data_source": evidence.source,
+            "items": evidence.citable_items(),
+            "notes": notes,
+        }
+
+        # Start both analysts concurrently; emit each as it resolves.
+        bull_task = asyncio.create_task(self.run_argument(BULL, evidence, "bullish"))
+        bear_task = asyncio.create_task(self.run_argument(BEAR, evidence, "bearish"))
+
+        bull, bull_err = await bull_task
+        if bull_err:
+            notes.append(bull_err)
+        yield {
+            "type": "argument",
+            "stance": "bull",
+            "argument": bull.model_dump() if bull else None,
+            "error": bull_err,
+        }
+
+        bear, bear_err = await bear_task
+        if bear_err:
+            notes.append(bear_err)
+        yield {
+            "type": "argument",
+            "stance": "bear",
+            "argument": bear.model_dump() if bear else None,
+            "error": bear_err,
+        }
+
+        verdict, verdict_err = await self.run_verdict(evidence, bull, bear)
+        if verdict_err:
+            notes.append(verdict_err)
+        yield {
+            "type": "verdict",
+            "verdict": verdict.model_dump() if verdict else None,
+            "error": verdict_err,
+        }
+
+        result = DebateResult(
+            ticker=evidence.ticker,
+            company_name=evidence.company_name,
+            data_source=evidence.source,
+            evidence=evidence.citable_items(),
+            bull=bull,
+            bear=bear,
+            verdict=verdict,
+            notes=notes,
+        )
+        yield {"type": "complete", "result": result.model_dump()}

@@ -11,7 +11,7 @@ Implementation tracker for the [design spec](docs/superpowers/specs/2026-06-09-b
 - [x] **3. Market data tool** — `tools/market_data.py` (Finnhub primary, yfinance fallback) returning a structured evidence pack, with unit tests (mocked APIs).
 - [x] **4. Observability setup** — `observability/tracing.py` (Phoenix + OpenInference) and `docker-compose.yml` to run Phoenix locally.
 - [x] **5. Debate agents** — `agents/bull.py`, `bear.py`, `judge.py` (Google ADK + Gemini) and `orchestrator.py`, with output-contract tests against a stubbed LLM.
-- [ ] **6. Debate endpoint (streaming)** — `/debate` SSE route wiring evidence → Bull → Bear → Judge and streaming results to the client.
+- [x] **6. Debate endpoint (streaming)** — `/debate` SSE route wiring evidence → Bull → Bear → Judge and streaming results to the client.
 
 ## Arize core
 - [ ] **7. Evaluations** — `evals/debate_evals.py`: groundedness eval on Bull/Bear, reasoning-quality eval on the Judge; write scores back as Phoenix span annotations, with a test on canned traces.
