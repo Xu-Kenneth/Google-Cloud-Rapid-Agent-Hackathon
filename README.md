@@ -98,7 +98,9 @@ bull-vs-bear/
 │       ├── tools/              # market_data
 │       ├── observability/      # Phoenix / OpenInference tracing
 │       ├── evals/              # debate evaluations
+│       ├── history/            # local / Firestore history store
 │       └── mcp/                # Phoenix MCP client
+│   └── scripts/smoke.py        # live debate against Gemini (manual)
 └── web/                        # React/Vite app
 ```
 
@@ -223,8 +225,13 @@ gcloud run deploy bvb-web --image $IMAGE --region $REGION --allow-unauthenticate
 
 ```bash
 cd backend
-pytest            # run the test suite
+pip install -e ".[dev]"        # install with test deps
+pytest                         # run the test suite (no network/keys needed)
+python scripts/smoke.py NVDA   # live debate against Gemini (requires a key)
 ```
+
+The unit and end-to-end tests stub the model and market data, so they run offline.
+`scripts/smoke.py` exercises the real Gemini path once your `.env` is configured.
 
 ## License
 
