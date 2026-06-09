@@ -8,7 +8,7 @@ Implementation tracker for the [design spec](docs/superpowers/specs/2026-06-09-b
 - [x] **2. Backend project setup** — `backend/pyproject.toml`, `app/config.py` (env-driven settings), FastAPI app with a `/health` route.
 
 ## Core capabilities
-- [ ] **3. Market data tool** — `tools/market_data.py` (Finnhub primary, yfinance fallback) returning a structured evidence pack, with unit tests (mocked APIs).
+- [x] **3. Market data tool** — `tools/market_data.py` (Finnhub primary, yfinance fallback) returning a structured evidence pack, with unit tests (mocked APIs).
 - [ ] **4. Observability setup** — `observability/tracing.py` (Phoenix + OpenInference) and `docker-compose.yml` to run Phoenix locally.
 - [ ] **5. Debate agents** — `agents/bull.py`, `bear.py`, `judge.py` (Google ADK + Gemini) and `orchestrator.py`, with output-contract tests against a stubbed LLM.
 - [ ] **6. Debate endpoint (streaming)** — `/debate` SSE route wiring evidence → Bull → Bear → Judge and streaming results to the client.
