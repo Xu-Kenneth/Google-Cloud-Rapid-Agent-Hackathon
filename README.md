@@ -174,10 +174,50 @@ App: <http://localhost:5173>
 | `BACKEND_HOST` / `BACKEND_PORT` | no | `0.0.0.0` / `8000` | Server bind |
 | `CORS_ALLOW_ORIGINS` | no | `http://localhost:5173` | Allowed frontend origins |
 
+## Run the whole stack locally (Docker)
+
+```bash
+cp .env.example .env      # add your GOOGLE_API_KEY
+docker compose up --build # phoenix + backend + web
+```
+
+- Frontend → <http://localhost:5173>
+- Backend → <http://localhost:8000>
+- Phoenix → <http://localhost:6006>
+
 ## Deployment (Cloud Run)
 
-The backend and web app each ship a `Dockerfile` and deploy to **Cloud Run**.
-Full deploy steps are documented as part of the build (see `CHECKLIST.md`, item 11).
+Both services ship a `Dockerfile`. Set your project/region first:
+
+```bash
+export PROJECT=your-gcp-project
+export REGION=us-central1
+gcloud config set project $PROJECT
+gcloud services enable run.googleapis.com aiplatform.googleapis.com cloudbuild.googleapis.com
+```
+
+**Backend** (build from source, Vertex AI mode):
+
+```bash
+gcloud run deploy bvb-backend \
+  --source ./backend --region $REGION --allow-unauthenticated \
+  --set-env-vars GOOGLE_GENAI_USE_VERTEXAI=true,GOOGLE_CLOUD_PROJECT=$PROJECT,GOOGLE_CLOUD_LOCATION=$REGION,HISTORY_BACKEND=firestore
+BACKEND_URL=$(gcloud run services describe bvb-backend --region $REGION --format='value(status.url)')
+```
+
+**Frontend** (the API base is baked in at build time, so build with `--build-arg`):
+
+```bash
+gcloud artifacts repositories create bvb --repository-format=docker --location=$REGION
+gcloud auth configure-docker $REGION-docker.pkg.dev
+IMAGE=$REGION-docker.pkg.dev/$PROJECT/bvb/web
+docker build --build-arg VITE_API_BASE=$BACKEND_URL -t $IMAGE ./web
+docker push $IMAGE
+gcloud run deploy bvb-web --image $IMAGE --region $REGION --allow-unauthenticated
+```
+
+> Cloud Run injects `$PORT`; both containers honor it. Phoenix can run as a separate
+> service or be omitted — tracing is fail-open, so the app works without it.
 
 ## Development
 

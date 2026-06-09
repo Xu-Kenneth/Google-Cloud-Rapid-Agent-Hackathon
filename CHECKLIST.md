@@ -22,5 +22,5 @@ Implementation tracker for the [design spec](docs/superpowers/specs/2026-06-09-b
 - [x] **10. Firestore persistence** — store debates + scores; back the history view with real data.
 
 ## Ship
-- [ ] **11. Cloud Run deployment** — backend + web Dockerfiles, deploy steps, finalized `README.md` with architecture diagram and run/deploy instructions.
+- [x] **11. Cloud Run deployment** — backend + web Dockerfiles, deploy steps, finalized `README.md` with architecture diagram and run/deploy instructions.
 - [ ] **12. End-to-end smoke test & polish** — single-ticker E2E against local Phoenix; final cleanup.

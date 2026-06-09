@@ -2,7 +2,6 @@
 name = "bull-vs-bear"
 version = "0.1.0"
 description = "Observable multi-agent equity debate powered by Gemini and Arize Phoenix"
-readme = "../README.md"
 requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
 authors = [{ name = "Kenneth Xu" }]

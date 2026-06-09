@@ -1,12 +1,12 @@
 # Local development stack for Bull vs Bear.
 #
-#   docker compose up -d phoenix     # start the Arize Phoenix observability server
+#   docker compose up -d phoenix         # just the observability server
+#   docker compose up --build            # full stack: phoenix + backend + web
 #
-# Phoenix UI:        http://localhost:6006
-# OTLP HTTP traces:  http://localhost:6006/v1/traces  (PHOENIX_COLLECTOR_ENDPOINT)
+# Phoenix UI:  http://localhost:6006      Backend: http://localhost:8000
+# Frontend:    http://localhost:5173
 #
-# The backend runs locally via `uvicorn app.main:app` and ships its traces here.
-# A containerized backend service is added in the deployment step (see CHECKLIST.md).
+# The backend reads keys from the repo-root .env (see .env.example).
 
 services:
   phoenix:
@@ -19,6 +19,32 @@ services:
       - PHOENIX_WORKING_DIR=/data
     volumes:
       - phoenix_data:/data
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    container_name: bvb-backend
+    env_file: .env
+    environment:
+      # Point tracing at the Phoenix service inside the compose network.
+      - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006
+    ports:
+      - "8000:8080"
+    depends_on:
+      - phoenix
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./web
+      args:
+        VITE_API_BASE: http://localhost:8000
+        VITE_PHOENIX_URL: http://localhost:6006
+    container_name: bvb-web
+    ports:
+      - "5173:8080"
+    depends_on:
+      - backend
     restart: unless-stopped
 
 volumes:
