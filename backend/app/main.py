@@ -20,6 +20,7 @@ from app import __version__
 from app.agents import DebateOrchestrator
 from app.config import get_settings
 from app.evals import gemini_eval_fn
+from app.mcp import HistorySummary, PhoenixMCPClient
 from app.observability import setup_tracing
 from app.tools.market_data import EvidencePack
 from app.tools.market_data import fetch_evidence as _fetch_evidence
@@ -109,3 +110,31 @@ async def debate(
             yield _sse(str(evt["type"]), evt)
 
     return EventSourceResponse(event_gen())
+
+
+# --------------------------------------------------------------------------- #
+# History endpoint (Phoenix MCP)
+# --------------------------------------------------------------------------- #
+def get_phoenix_client() -> PhoenixMCPClient:
+    """Dependency: the Phoenix MCP client (overridable in tests)."""
+    return PhoenixMCPClient(
+        endpoint=settings.phoenix_collector_endpoint,
+        project_name=settings.phoenix_project_name,
+    )
+
+
+@app.get("/history", response_model=HistorySummary)
+async def history(
+    client: PhoenixMCPClient = Depends(get_phoenix_client),
+) -> HistorySummary:
+    """Aggregate past-debate performance, queried via the Phoenix MCP server."""
+    summary = await client.summarize()
+    if summary is None:
+        return HistorySummary(
+            source="none",
+            total_debates=0,
+            recent=[],
+            note="Phoenix MCP server unavailable; history populates once Phoenix is "
+            "running and debates have been recorded.",
+        )
+    return summary

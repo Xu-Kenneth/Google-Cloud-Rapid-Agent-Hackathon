@@ -15,7 +15,7 @@ Implementation tracker for the [design spec](docs/superpowers/specs/2026-06-09-b
 
 ## Arize core
 - [x] **7. Evaluations** — `evals/debate_evals.py`: groundedness eval on Bull/Bear, reasoning-quality eval on the Judge; write scores back as Phoenix span annotations, with a test on canned traces.
-- [ ] **8. Phoenix MCP integration** — `mcp/phoenix_client.py` + `/history` endpoint reading past-debate performance via the Phoenix MCP server.
+- [x] **8. Phoenix MCP integration** — `mcp/phoenix_client.py` + `/history` endpoint reading past-debate performance via the Phoenix MCP server.
 
 ## Product surface
 - [ ] **9. Frontend** — React/Vite app: ticker input, evidence panel, streamed Bull/Bear/Judge view, observability/eval panel, history tab, persistent "not financial advice" banner.
