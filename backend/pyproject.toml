@@ -1,0 +1,52 @@
+[project]
+name = "bull-vs-bear"
+version = "0.1.0"
+description = "Observable multi-agent equity debate powered by Gemini and Arize Phoenix"
+readme = "../README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Kenneth Xu" }]
+
+dependencies = [
+    # Web
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "sse-starlette>=2.1",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "httpx>=0.27",
+    # Agents / LLM
+    "google-adk>=0.2",
+    "google-genai>=0.3",
+    # Observability + evals (Arize)
+    "arize-phoenix-otel>=0.6",
+    "openinference-instrumentation-google-adk>=0.1",
+    "openinference-instrumentation-google-genai>=0.1",
+    # Market data (Finnhub via REST/httpx, yfinance fallback)
+    "yfinance>=0.2.40",
+]
+
+[project.optional-dependencies]
+firestore = ["google-cloud-firestore>=2.16"]
+evals = ["arize-phoenix-evals>=0.17", "pandas>=2.2"]
+dev = [
+    "pytest>=8.2",
+    "pytest-asyncio>=0.23",
+    "respx>=0.21",
+    "ruff>=0.5",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

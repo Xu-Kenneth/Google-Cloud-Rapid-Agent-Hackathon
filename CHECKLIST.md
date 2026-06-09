@@ -5,7 +5,7 @@ Implementation tracker for the [design spec](docs/superpowers/specs/2026-06-09-b
 
 ## Foundation
 - [x] **1. Repo scaffolding & license** — `LICENSE` (Apache-2.0), `.gitignore`, `.env.example`, `README.md` skeleton, top-level directory layout.
-- [ ] **2. Backend project setup** — `backend/pyproject.toml`, `app/config.py` (env-driven settings), FastAPI app with a `/health` route.
+- [x] **2. Backend project setup** — `backend/pyproject.toml`, `app/config.py` (env-driven settings), FastAPI app with a `/health` route.
 
 ## Core capabilities
 - [ ] **3. Market data tool** — `tools/market_data.py` (Finnhub primary, yfinance fallback) returning a structured evidence pack, with unit tests (mocked APIs).
