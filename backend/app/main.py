@@ -6,18 +6,30 @@ orchestrator, evaluation, and persistence modules added in later build steps.
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import __version__
 from app.config import get_settings
+from app.observability import setup_tracing
 
 settings = get_settings()
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    # Enable Phoenix tracing on startup (fail-open: never blocks serving).
+    setup_tracing(settings)
+    yield
+
 
 app = FastAPI(
     title="Bull vs Bear",
     description="Observable multi-agent equity debate powered by Gemini and Arize Phoenix.",
     version=__version__,
+    lifespan=lifespan,
 )
 
 app.add_middleware(

@@ -1,0 +1,25 @@
+# Local development stack for Bull vs Bear.
+#
+#   docker compose up -d phoenix     # start the Arize Phoenix observability server
+#
+# Phoenix UI:        http://localhost:6006
+# OTLP HTTP traces:  http://localhost:6006/v1/traces  (PHOENIX_COLLECTOR_ENDPOINT)
+#
+# The backend runs locally via `uvicorn app.main:app` and ships its traces here.
+# A containerized backend service is added in the deployment step (see CHECKLIST.md).
+
+services:
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    container_name: bvb-phoenix
+    ports:
+      - "6006:6006" # UI + OTLP HTTP collector
+      - "4317:4317" # OTLP gRPC collector
+    environment:
+      - PHOENIX_WORKING_DIR=/data
+    volumes:
+      - phoenix_data:/data
+    restart: unless-stopped
+
+volumes:
+  phoenix_data:
