@@ -4,7 +4,7 @@ Implementation tracker for the [design spec](docs/superpowers/specs/2026-06-09-b
 **Workflow:** each item is one committable unit. When an item is checked, its changes are committed and pushed to `main`.
 
 ## Foundation
-- [ ] **1. Repo scaffolding & license** — `LICENSE` (Apache-2.0), `.gitignore`, `.env.example`, `README.md` skeleton, top-level directory layout.
+- [x] **1. Repo scaffolding & license** — `LICENSE` (Apache-2.0), `.gitignore`, `.env.example`, `README.md` skeleton, top-level directory layout.
 - [ ] **2. Backend project setup** — `backend/pyproject.toml`, `app/config.py` (env-driven settings), FastAPI app with a `/health` route.
 
 ## Core capabilities
