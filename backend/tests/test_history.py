@@ -3,7 +3,8 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app, get_phoenix_client
+from app.history import LocalHistoryStore
+from app.main import app, get_history_store, get_phoenix_client
 from app.mcp import DebateRecord, PhoenixMCPClient, summarize_records
 
 
@@ -66,11 +67,16 @@ def test_history_endpoint_returns_summary_from_mcp():
     assert body["total_debates"] == 1
 
 
-def test_history_endpoint_fails_open_when_mcp_unavailable():
+def test_history_endpoint_falls_back_to_store_when_mcp_unavailable(tmp_path):
     async def boom(_client):
         raise RuntimeError("no node / no phoenix")
 
-    client = _client_with(boom)
+    empty_store = LocalHistoryStore(tmp_path / "history.jsonl")
+    app.dependency_overrides[get_phoenix_client] = lambda: PhoenixMCPClient(
+        endpoint="http://localhost:6006", project_name="test", record_fetcher=boom
+    )
+    app.dependency_overrides[get_history_store] = lambda: empty_store
+    client = TestClient(app)
     try:
         resp = client.get("/history")
     finally:
@@ -78,6 +84,7 @@ def test_history_endpoint_fails_open_when_mcp_unavailable():
 
     assert resp.status_code == 200
     body = resp.json()
-    assert body["source"] == "none"
+    # MCP failed, so we fall back to the (empty) local store.
+    assert body["source"] == "local"
     assert body["total_debates"] == 0
     assert body["note"]

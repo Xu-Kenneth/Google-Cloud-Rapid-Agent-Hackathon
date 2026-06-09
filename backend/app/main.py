@@ -20,6 +20,7 @@ from app import __version__
 from app.agents import DebateOrchestrator
 from app.config import get_settings
 from app.evals import gemini_eval_fn
+from app.history import HistoryStore, build_history_store, record_from_result
 from app.mcp import HistorySummary, PhoenixMCPClient
 from app.observability import setup_tracing
 from app.tools.market_data import EvidencePack
@@ -87,6 +88,11 @@ def get_evidence_fetcher() -> Callable[[str], EvidencePack]:
     return fetch
 
 
+def get_history_store() -> HistoryStore:
+    """Dependency: the debate history store (overridable in tests)."""
+    return build_history_store(settings)
+
+
 def _sse(event: str, payload: dict) -> dict:
     return {"event": event, "data": json.dumps(payload)}
 
@@ -96,6 +102,7 @@ async def debate(
     ticker: str = Query(..., min_length=1, max_length=12, description="Stock ticker"),
     orchestrator: DebateOrchestrator = Depends(get_orchestrator),
     fetch: Callable[[str], EvidencePack] = Depends(get_evidence_fetcher),
+    store: HistoryStore = Depends(get_history_store),
 ) -> EventSourceResponse:
     """Stream a Bull vs Bear debate for ``ticker`` as Server-Sent Events."""
     symbol = ticker.strip().upper()
@@ -107,6 +114,12 @@ async def debate(
         # Market-data calls are blocking; keep the event loop free.
         evidence = await run_in_threadpool(fetch, symbol)
         async for evt in orchestrator.stream_debate(evidence):
+            if evt.get("type") == "complete":
+                try:
+                    record = record_from_result(evt["result"])
+                    await run_in_threadpool(store.record, record)
+                except Exception:  # noqa: BLE001 - persistence never breaks the stream
+                    pass
             yield _sse(str(evt["type"]), evt)
 
     return EventSourceResponse(event_gen())
@@ -126,15 +139,22 @@ def get_phoenix_client() -> PhoenixMCPClient:
 @app.get("/history", response_model=HistorySummary)
 async def history(
     client: PhoenixMCPClient = Depends(get_phoenix_client),
+    store: HistoryStore = Depends(get_history_store),
 ) -> HistorySummary:
-    """Aggregate past-debate performance, queried via the Phoenix MCP server."""
+    """Aggregate past-debate performance.
+
+    Prefers the Phoenix MCP server; falls back to the local/Firestore history store
+    when MCP is unavailable.
+    """
     summary = await client.summarize()
-    if summary is None:
+    if summary is not None:
+        return summary
+    try:
+        return await run_in_threadpool(store.summarize)
+    except Exception:  # noqa: BLE001 - last-resort fail open
         return HistorySummary(
             source="none",
             total_debates=0,
             recent=[],
-            note="Phoenix MCP server unavailable; history populates once Phoenix is "
-            "running and debates have been recorded.",
+            note="History temporarily unavailable.",
         )
-    return summary

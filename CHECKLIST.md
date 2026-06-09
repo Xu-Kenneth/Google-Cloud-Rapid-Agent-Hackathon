@@ -19,7 +19,7 @@ Implementation tracker for the [design spec](docs/superpowers/specs/2026-06-09-b
 
 ## Product surface
 - [x] **9. Frontend** — React/Vite app: ticker input, evidence panel, streamed Bull/Bear/Judge view, observability/eval panel, history tab, persistent "not financial advice" banner.
-- [ ] **10. Firestore persistence** — store debates + scores; back the history view with real data.
+- [x] **10. Firestore persistence** — store debates + scores; back the history view with real data.
 
 ## Ship
 - [ ] **11. Cloud Run deployment** — backend + web Dockerfiles, deploy steps, finalized `README.md` with architecture diagram and run/deploy instructions.
